@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import model.User;
 import util.HttpRequestUtils;
+import util.IOUtils;
 
 public class RequestHandler extends Thread {
 	private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -40,26 +41,35 @@ public class RequestHandler extends Thread {
 			if (line == null) {
 				return;
 			}
-
 			String url = HttpRequestUtils.getUrl(line);
 			log.debug("Url : {}", url);
 
 			// 요구사항2 - GET 방식으로 회원가입하기
 			if (url.startsWith("/user/create")) {
-				int index = url.indexOf("?");
-				String queryString = url.substring(index + 1);
+				String queryString = null;
+
+				if (line.startsWith("GET")) {
+					int index = url.indexOf("?");
+					queryString = url.substring(index + 1);
+				} else {
+					// 요구사항3 - POST 방식으로 회원가입하기
+					while (!"".equals(line)) {
+						log.debug("line : {}", line);
+						line = br.readLine();
+					}
+					queryString = br.readLine();
+					log.debug("queryString : {}",queryString);
+				}
+
 				Map<String, String> params = HttpRequestUtils.parseQueryString(queryString);
-				User user = new User(params.get("userId"), params.get("password"), params.get("name"), params.get("email"));
+				User user = new User(params.get("userId"), params.get("password"), params.get("name"),
+						params.get("email"));
 				log.debug("User : {}", user);
 
 				// 회원가입 후 index.html 화면으로 이동
 				url = "/index.html";
 			}
 
-//			while (!"".equals(line)) {
-//				log.debug(line);
-//				line = br.readLine();
-//			}
 			log.debug("webapp url : {}", url);
 
 			byte[] body = Files.readAllBytes(new File("./webapp" + url).toPath());
